@@ -1,0 +1,10 @@
+# conf file must be in same directory as script
+
+[json]
+app_name = Okta
+version = 1.0
+
+[okta]
+api_token = 
+api_uri = somesite.oktapreview.com
+APP_PATH = /usr/local/oktaEventLogs
