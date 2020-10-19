@@ -23,8 +23,18 @@ class integration(object):
         headers = { 'Authorization': 'SSWS ' + self.api_token }
         params = {'startDate': self.mystate.isoformat()[:-3] + 'Z' }
 
-        events = requests.get(events_url, headers=headers, params=params)
+        try:
+            self.ds.log('INFO','Sending requests {0}'.format(events_url))
+            events = requests.get(events_url, headers=headers, params=params)
+        except Exception as e:
+            self.ds.log('ERROR', "Exception {0}".format(str(e)))
+            return []
 
+        if not events or events.status_code != 200:
+            self.ds.log('WARNING',
+                "Received unexpected " + str(events) + " response from Okta Server {0}.".format(
+                events_url))
+            return []
         ret_list = []
 
         for e in events.json():
@@ -36,7 +46,17 @@ class integration(object):
             ret_list.append(e)
 
         while 'next' in events.links:
-            events = requests.get(events.links['next']['url'], headers=headers)
+            try:
+                self.ds.log('INFO','Sending requests {0}'.format(events.links['next']['url']))
+                events = requests.get(events.links['next']['url'], headers=headers)
+            except Exception as e:
+                self.ds.log('ERROR', "Exception {0}".format(str(e)))
+                return []
+            if not events or events.status_code != 200:
+                self.ds.log('WARNING',
+                    "Received unexpected " + str(events) + " response from Okta Server {0}.".format(
+                    alerts_url))
+                return []
             for e in events.json():
                 if e == 'errorCode':
                     break
@@ -49,7 +69,18 @@ class integration(object):
         headers = { 'Authorization': 'SSWS ' + self.api_token }
         params = {'startDate': self.mystate.isoformat()[:-3] + 'Z' }
 
-        events = requests.get(logs_url, headers=headers, params=params)
+        try:
+            self.ds.log('INFO','Sending requests {0}'.format(logs_url))
+            events = requests.get(logs_url, headers=headers, params=params)
+        except Exception as e:
+            self.ds.log('ERROR', "Exception {0}".format(str(e)))
+            return []
+        if not events or events.status_code != 200:
+            self.ds.log('WARNING',
+                "Received unexpected " + str(events) + " response from Okta Server {0}.".format(
+                logs_url))
+            return []
+
         ret_list = []
 
         for e in events.json():
@@ -59,7 +90,18 @@ class integration(object):
             ret_list.append(e)
 
         while 'next' in events.links:
-            events = requests.get(events.links['next']['url'], headers=headers)
+            #print(events.links)
+            try:
+                self.ds.log('INFO','Sending requests {0}'.format(events.links['next']['url']))
+                events = requests.get(events.links['next']['url'], headers=headers)
+            except Exception as e:
+                self.ds.log('ERROR', "Exception {0}".format(str(e)))
+                return []
+            if not events or events.status_code != 200:
+                self.ds.log('WARNING',
+                    "Received unexpected " + str(events) + " response from Okta Server {0}.".format(
+                    events.status_code))
+                return []
             for e in events.json():
                 if e == 'errorCode':
                     break
