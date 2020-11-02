@@ -6,6 +6,7 @@ import os
 from datetime import datetime, timedelta
 import requests
 import json
+import time
 
 sys.path.insert(0, './ds-integration')
 from DefenseStorm import DefenseStorm
@@ -13,18 +14,17 @@ from DefenseStorm import DefenseStorm
 class integration(object):
 
     JSON_field_mappings = {
-        'published' : 'timestamp',
+        #'published' : 'timestamp',
         'displayMessage' : 'message'
     }
 
     def getEvents(self):
         events_url = 'https://' + self.api_uri + '/api/v1/events'
-        logs_url = 'https://' + self.api_uri + '/api/v1/logs'
         headers = { 'Authorization': 'SSWS ' + self.api_token }
-        params = {'startDate': self.mystate.isoformat()[:-3] + 'Z' }
+        params = {'since': self.mystate.isoformat('T','seconds')[:-3] + 'Z' }
 
         try:
-            self.ds.log('INFO','Sending requests {0}'.format(events_url))
+            self.ds.log('INFO','Sending requests {0} params: {1}'.format(events_url, params))
             events = requests.get(events_url, headers=headers, params=params)
         except Exception as e:
             self.ds.log('ERROR', "Exception {0}".format(str(e)))
@@ -62,12 +62,14 @@ class integration(object):
                     break
                 e['category'] = 'events'
                 ret_list.append(e)
+            time.sleep(1)
         return ret_list
 
     def getLogs(self):
         logs_url = 'https://' + self.api_uri + '/api/v1/logs'
         headers = { 'Authorization': 'SSWS ' + self.api_token }
-        params = {'startDate': self.mystate.isoformat()[:-3] + 'Z' }
+        params = {'since': self.mystate.isoformat('T','seconds')[:-3] + 'Z' }
+        #params = {'since': self.mystate.isoformat()[:-3] + 'Z' }
 
         try:
             self.ds.log('INFO','Sending requests {0}'.format(logs_url))
@@ -86,11 +88,13 @@ class integration(object):
         for e in events.json():
             if e == 'errorCode':
                 break
-            e['category'] = 'events'
+            e['category'] = 'logs'
+            e['timestamp'] = e['published'][:-5] + 'Z'
             ret_list.append(e)
+        old_link = ""
 
-        while 'next' in events.links:
-            #print(events.links)
+        while events.links['next']['url'] != old_link and 'next' in events.links:
+            old_link = events.links['next']['url']
             try:
                 self.ds.log('INFO','Sending requests {0}'.format(events.links['next']['url']))
                 events = requests.get(events.links['next']['url'], headers=headers)
@@ -106,6 +110,7 @@ class integration(object):
                 if e == 'errorCode':
                     break
                 e['category'] = 'logs'
+                e['timestamp'] = e['published'][:-5] + 'Z'
                 ret_list.append(e)
         return ret_list
 
@@ -114,7 +119,8 @@ class integration(object):
         self.ds.log('INFO', 'Getting Okta Logs')
         log_list = self.getLogs()
         self.ds.log('INFO', 'Getting Okta Events')
-        event_list = self.getEvents()
+        #event_list = self.getEvents()
+        event_list = []
         #self.ds.writeCEFEvent()
         for event in event_list:
             self.ds.writeJSONEvent(event, JSON_field_mappings = self.JSON_field_mappings)
@@ -168,10 +174,10 @@ class integration(object):
         self.api_uri = self.ds.config_get('okta', 'api_uri')
         self.state_dir = os.path.join(self.ds.config_get('okta', 'APP_PATH'), 'state')
         self.mystate = self.ds.get_state(self.state_dir)
-        self.newstate = datetime.now()
+        self.newstate = datetime.utcnow()
 
         if self.mystate == None:
-            self.mystate = self.newstate - timedelta(0,600)
+            self.mystate = self.newstate - timedelta(0,3600)
 
 
 if __name__ == "__main__":
