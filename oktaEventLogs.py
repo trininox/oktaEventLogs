@@ -15,7 +15,15 @@ class integration(object):
 
     JSON_field_mappings = {
         #'published' : 'timestamp',
-        'displayMessage' : 'message'
+        'displayMessage' : 'message',
+        'actor_type' : 'type',
+        'eventType' : 'event_type',
+        'outcome_result' : 'outcome',
+        'actor_displayName' : 'display_name',
+        'actor_alternateId' : 'username',
+        'client_ipAddress' : 'client_ip',
+        'actor_id' : 'user_id',
+        'client_userAgent_rawUserAgent' : 'user_agent',
     }
 
     def getEvents(self):
