@@ -53,7 +53,9 @@ class integration(object):
             e = json.dumps(data)
             ret_list.append(e)
 
-        while 'next' in events.links:
+        old_link = ""
+        while events.links['next']['url'] != old_link and 'next' in events.links:
+            old_link = events.links['next']['url']
             try:
                 self.ds.log('INFO','Sending requests {0}'.format(events.links['next']['url']))
                 events = requests.get(events.links['next']['url'], headers=headers)
