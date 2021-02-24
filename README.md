@@ -1,4 +1,4 @@
-CatoNetworks Integration for DefenseStorm
+Okta Integration for DefenseStorm
 
 to pull this repository and submodules:
 
